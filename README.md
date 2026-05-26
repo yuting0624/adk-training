@@ -1,6 +1,6 @@
 # ADK Training Workshop
 
-**3 時間ハンズオン**: **ADK 2.0** (Agent Development Kit) でグラフベース `Workflow` を構築し、MCP統合・Cloud Run デプロイ・Gemini Enterprise 呼び出しまでを一気通貫で体験。
+**3 時間ハンズオン**: **ADK 2.0** (Agent Development Kit) でグラフベース `Workflow` を構築し、MCP統合・Agent Engine デプロイ・Gemini Enterprise 呼び出しまでを一気通貫で体験。
 
 > ワークショップの全手順と解説は **[tutorial.md](tutorial.md)** にまとまっています。本 README はリポジトリ構成のクイックリファレンスです。
 

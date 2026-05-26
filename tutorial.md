@@ -1,14 +1,14 @@
 ---
 title: "ADK 2.0 ハンズオン: マルチエージェント医療トリアージ"
-description: "ADK 2.0 でシングルエージェントから Workflow まで段階的に構築し、Cloud Run にデプロイ、Gemini Enterprise から呼び出すまでを 3 時間で体験する"
+description: "ADK 2.0 でシングルエージェントから Workflow まで段階的に構築し、Agent Engine にデプロイ、Gemini Enterprise から呼び出すまでを 3 時間で体験する"
 duration: 180
 level: Intermediate
-tags: [ADK, Multi-Agent, Workflow, MCP, Cloud Run, Gemini Enterprise]
+tags: [ADK, Multi-Agent, Workflow, MCP, Agent Engine, Gemini Enterprise]
 ---
 
 # ADK 2.0 ハンズオン: マルチエージェント医療トリアージ
 
-このチュートリアルでは **Agent Development Kit (ADK) 2.0** を使い、患者の症状文から推奨診療科を判定し、近隣の医療機関を提示する **マルチエージェントシステム** を段階的に構築します。最終的に Cloud Run へデプロイし、Gemini Enterprise からの呼び出しまで一気通貫で体験します。
+このチュートリアルでは **Agent Development Kit (ADK) 2.0** を使い、患者の症状文から推奨診療科を判定し、近隣の医療機関を提示する **マルチエージェントシステム** を段階的に構築します。最終的に Vertex AI Agent Engine へデプロイし、Gemini Enterprise からの呼び出しまで一気通貫で体験します。
 
 > **教育用デモの注意**
 > 本チュートリアルは ADK の学習を目的とした教育用デモであり、実際の医療診断行為ではありません。題材として医療トリアージを採用していますが、実運用では医療規制や安全性検証が別途必要です。
@@ -34,8 +34,8 @@ graph LR
 | Step 03 Tools (関数) | 20 分 | 関数を `tools=[...]` に渡すだけでツール化 |
 | Step 04 MCP (Maps) | 15 分 | `McpToolset` + Google 公式 Maps Grounding Lite |
 | Step 05 マルチエージェント | 50 分 | `Workflow` で 3 エージェントをグラフ合成 |
-| Step 06 Cloud Run デプロイ | 5 分 | `adk deploy cloud_run` (バックグラウンドビルド) |
-| Step 07 Gemini Enterprise | 5 分 | デプロイ済みエージェントを GE から呼び出す (デモ) |
+| Step 06 Agent Engine デプロイ | 5 分 | `adk deploy agent_engine` (バックグラウンドビルド) |
+| Step 07 Gemini Enterprise | 5 分 | デプロイ済み Agent Engine を GE から呼び出す (デモ) |
 | Step 08 [ストレッチ] | 10-15 分 | `agents-cli` + Gemini CLI で AI にエージェントを改変させる (時間が許せば) |
 
 合計: 180 分 (Step 08 を含めると 190-195 分)
@@ -66,7 +66,7 @@ cd adk-training
 セットアップは `setup.sh` 一発で完了します。以下を行います:
 
 - GCP プロジェクト ID の検出
-- 必要な API の有効化 (Vertex AI / Cloud Run / Cloud Build / Artifact Registry / Maps)
+- 必要な API の有効化 (Vertex AI / Maps Grounding Lite / Cloud Run / Cloud Build / Artifact Registry)
 - `uv` (Python パッケージマネージャ) のインストール
 - `google-adk[mcp,gcp]==2.1.0` 系の依存関係インストール
 - `.env` の生成 (プロジェクト ID と Vertex AI 設定を自動注入)
@@ -676,60 +676,67 @@ root_agent = Workflow(
 
 ---
 
-## Step 06. Cloud Run へデプロイ (5 分)
+## Step 06. Agent Engine へデプロイ (5 分)
 
 ### 学習目標
 
-- `adk deploy cloud_run` で本番環境にエージェントをデプロイする
-- 環境変数の渡し方 (MAPS_API_KEY) を理解する
-- デプロイ後のエンドポイント構造を把握する
+- `adk deploy agent_engine` で Vertex AI Agent Engine にエージェントをデプロイする
+- Agent Engine の reasoningEngine リソースモデルを理解する
+- 環境変数 (MAPS_API_KEY) の渡し方を理解する
 
-### 解説: adk deploy
+### 解説: Agent Engine とは
 
-`adk deploy cloud_run <agent_folder>` はエージェントのソースを Cloud Build でコンテナ化し Cloud Run にデプロイします。`GOOGLE_CLOUD_PROJECT` / `GOOGLE_CLOUD_LOCATION` / `GOOGLE_GENAI_USE_VERTEXAI` は自動で Cloud Run の環境変数に注入されますが、**`MAPS_API_KEY` などのアプリ固有の env vars は自分で渡す必要があります** (`--` 以降の引数が `gcloud run deploy` に渡される)。
+**Vertex AI Agent Engine** は ADK エージェント専用のマネージドランタイムです。Cloud Run と違って自分でコンテナや FastAPI を意識する必要がなく、エージェントを **reasoningEngine リソース** として登録するだけで、Vertex AI が runtime / scaling / monitoring を引き受けます。
 
-> **重要**: Cloud Run は **具体的なリージョン** (例: `us-central1`) が必要です。Vertex AI で使っている `GOOGLE_CLOUD_LOCATION=global` はそのまま使えないので、Cloud Run 用には明示的にリージョンを指定します。
+Gemini Enterprise (Step 07) との連携は Agent Engine リソース ID を登録するだけで完結するため、エンタープライズ統合のデフォルトルートです。
+
+| | Cloud Run | Agent Engine |
+|---|---|---|
+| ランタイム | コンテナ (FastAPI) | マネージド reasoningEngine |
+| 単位 | Cloud Run Service | reasoningEngine リソース |
+| GE 連携 | カスタムエージェントとして手動登録 | リソース ID をそのまま登録 (推奨) |
+| 使い分け | 既存の Cloud Run 資産と統合したい | エージェント単体で運用したい |
 
 ### ハンズオン
 
 #### (a) デプロイコマンド
 
 ```bash
-uv run adk deploy cloud_run \
+uv run adk deploy agent_engine \
   --project=$GOOGLE_CLOUD_PROJECT \
   --region=us-central1 \
-  --service_name=medical-triage \
-  --with_ui \
+  --display_name="Medical Triage Workflow" \
+  --description="患者の症状から診療科を判定し近隣医療機関を提示する Workflow" \
   --trace_to_cloud \
-  app \
-  -- --set-env-vars=MAPS_API_KEY=$MAPS_API_KEY
+  --env_file=.env \
+  app
 ```
 
 主なフラグ:
-- `--region=us-central1`: Cloud Run のリージョン (Vertex AI の `global` とは別)
-- `--with_ui`: 開発用 Web UI も含めてデプロイ (本番は外す)
+- `--region=us-central1`: Agent Engine のリージョン (Tokyo `asia-northeast1` も利用可)
+- `--display_name`: GE などで表示される名前
 - `--trace_to_cloud`: Cloud Trace にトレース送信
+- `--env_file=.env`: project root の `.env` を Agent Engine の環境変数として注入 (デフォルトは `<agent>/.env` を探すので明示)
 - `app`: エージェントのソースコードフォルダ
-- `--` 以降: `gcloud run deploy` に渡す引数。`MAPS_API_KEY` をここで注入
+
+> **依存関係**: Agent Engine は sandbox 内で `app/requirements.txt` を読んで依存をインストールします。本リポジトリではすでに `app/requirements.txt` を同梱済み (`google-adk[mcp]` + `python-dotenv`)。
 
 初回ビルドは 5〜8 分かかります。**コマンド投入後、ビルド待機中に Step 07 のデモを並行で見てください。**
 
 #### (b) デプロイ結果の確認
 
-デプロイ完了後、Service URL が表示されます (例: `https://medical-triage-xxx.run.app`)。
+デプロイ完了後、reasoningEngine のフルリソース名が表示されます (例: `projects/yuting-claw-sandbox/locations/us-central1/reasoningEngines/1234567890123456789`)。**この ID を Step 07 で使います。**
 
 ```bash
-# Cloud Run コンソールで状態確認
-gcloud run services describe medical-triage --region=us-central1
+# Agent Engine リソース一覧で確認
+gcloud ai reasoning-engines list --region=us-central1 --project=$GOOGLE_CLOUD_PROJECT
 ```
-
-ブラウザで Service URL を開くと、ADK Web UI が立ち上がります。Chat で動作確認してください。
 
 ### 振り返り / 深掘り
 
-- `adk deploy agent_engine` を使うと Vertex AI Agent Engine (マネージドランタイム) にデプロイ可能。Gemini Enterprise との統合は Agent Engine 経由が推奨ルート
-- 本番運用では `--with_ui` を外し、`-- --no-allow-unauthenticated` で認証必須にする。API キーは Secret Manager 経由 (`--set-secrets=MAPS_API_KEY=projects/.../secrets/maps-api-key:latest`) が安全
-- `adk deploy gke` (GKE) もサポートされており、既存 Kubernetes 環境への統合も可能
+- `--env_file` で指定した `.env` は Agent Engine の runtime 環境変数になります。本番では Secret Manager + Workload Identity 経由が推奨
+- 既存の Agent Engine リソースを更新したい場合は `--agent_engine_id=<id>` を追加 (省略時は新規作成)
+- `adk deploy cloud_run` (Cloud Run)、`adk deploy gke` (GKE) も同じ CLI からデプロイ可能。GE 連携前提なら Agent Engine が最短ルート
 
 ---
 
@@ -737,18 +744,20 @@ gcloud run services describe medical-triage --region=us-central1
 
 ### 学習目標
 
-- デプロイ済みエージェントを Gemini Enterprise から呼び出す全体像を理解する
+- Agent Engine リソースを Gemini Enterprise から呼び出す全体像を理解する
 - AI Agent をエンタープライズアプリに組み込む際の構成要素を把握する
 
 ### デモ内容 (講師が実演)
 
+Step 06 で出力された **reasoningEngine リソース名** (`projects/.../reasoningEngines/...`) を使います。
+
 1. Google Cloud コンソールから **Gemini Enterprise → Agent Builder** を開く
-2. 事前に Agent Engine にデプロイされた本ワークショップのエージェントを登録
+2. **「Add agent」 → 「From Agent Engine」** を選択し、reasoningEngine リソース ID を貼り付けて登録
 3. Gemini Enterprise の Chat UI から「動悸がする。東京駅周辺で病院を」と入力
-4. エージェントが呼び出され、Workflow が実行されて最終応答が GE 上に表示される
+4. Agent Engine 上の Workflow が呼び出され、最終応答が GE 上に表示される
 5. 監査ログ / トレース / レート制限などのエンタープライズ機能を紹介
 
-参加者の皆さんは自分のエージェントをデプロイしただけで、同じ構造で Gemini Enterprise に登録できることをご理解ください。
+Cloud Run カスタム agent と違って **エンドポイント URL / 認証フローを書かなくて済む** のが Agent Engine 経由の利点です。
 
 > **補足: `agents-cli publish gemini-enterprise`**
 > このコンソール操作はコマンドラインからも実行できます (後述の `agents-cli` 参照)。CI/CD パイプラインに組み込む場合はコマンド版が便利です。
@@ -861,7 +870,7 @@ uv run adk web app --port 8000 --allow_origins "*"
 - 関数を `tools=[...]` に渡すだけのシンプルなツール統合
 - `McpToolset` で外部 MCP サーバー (Google Maps Grounding Lite) を接続
 - `Workflow` でグラフベースに 3 エージェントを直列合成
-- `adk deploy cloud_run` で本番環境にデプロイ
+- `adk deploy agent_engine` で Vertex AI Agent Engine にデプロイ
 - Gemini Enterprise からの呼び出しでエンタープライズ統合の全体像
 
 ### 次に学ぶべきこと
