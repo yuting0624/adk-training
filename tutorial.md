@@ -705,7 +705,7 @@ Gemini Enterprise (Step 07) との連携は Agent Engine リソース ID を登�
 uv run adk deploy agent_engine \
   --project=$GOOGLE_CLOUD_PROJECT \
   --region=us-central1 \
-  --display_name="Medical Triage Workflow" \
+  --display_name="Medical Triage - $(whoami)" \
   --description="患者の症状から診療科を判定し近隣医療機関を提示する Workflow" \
   --trace_to_cloud \
   --env_file=.env \
@@ -714,12 +714,17 @@ uv run adk deploy agent_engine \
 
 主なフラグ:
 - `--region=us-central1`: Agent Engine のリージョン (Tokyo `asia-northeast1` も利用可)
-- `--display_name`: GE などで表示される名前
+- `--display_name`: GE などで表示される名前。**共有プロジェクトでは `$(whoami)` を入れて他の人と衝突しないように**
 - `--trace_to_cloud`: Cloud Trace にトレース送信
 - `--env_file=.env`: project root の `.env` を Agent Engine の環境変数として注入 (デフォルトは `<agent>/.env` を探すので明示)
 - `app`: エージェントのソースコードフォルダ
 
 > **依存関係**: Agent Engine は sandbox 内で `app/requirements.txt` を読んで依存をインストールします。本リポジトリではすでに `app/requirements.txt` を同梱済み (`google-adk[mcp]` + `python-dotenv`)。
+
+> **⚠️ 共有 GCP プロジェクトを使う場合の注意**
+> - 全員が `--display_name="Medical Triage Workflow"` で揃ってしまうと、Agent Engine コンソールで誰のリソースか分からなくなります。**必ず `$(whoami)` で個人識別子を入れる**
+> - 他の参加者の reasoningEngine を **削除しないこと** (`gcloud ai reasoning-engines list` で見える他人のリソースは触らない)
+> - 全員ほぼ同時にデプロイすると Cloud Build キューイングで待ち時間が長くなることがあります。**講師の合図でずらして投入** すると安心
 
 初回ビルドは 5〜8 分かかります。**コマンド投入後、ビルド待機中に Step 07 のデモを並行で見てください。**
 
