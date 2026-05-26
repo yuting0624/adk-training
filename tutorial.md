@@ -57,7 +57,7 @@ graph LR
 Cloud Shell を起動し、本リポジトリを取得します。
 
 ```bash
-git clone https://github.com/<org>/adk-training.git
+git clone https://github.com/yuting0624/adk-training.git
 cd adk-training
 ```
 
@@ -103,8 +103,10 @@ adk-training/
 ├── tutorial.md            ← 本ファイル
 ├── setup.sh               ← セットアップスクリプト
 ├── pyproject.toml         ← 依存関係定義
-├── .env                   ← 環境変数 (gitignore 済)
-├── app/                   ← ワークショップ中に育てるエージェント (空のスケルトン)
+├── .env                   ← 環境変数 (gitignore 済、setup.sh が生成)
+├── app/                   ← ワークショップ中に育てるエージェント
+│   ├── __init__.py
+│   └── agent.py           ← 最小スタブ (Step 01 で書き換える)
 └── solutions/             ← 各 Step の完成形 (詰まったとき用)
     ├── 01_single_agent/
     ├── 02_tools/
@@ -121,7 +123,7 @@ adk-training/
 
 - ADK 2.0 の `Agent` クラスの主要パラメータを理解する
 - `instruction` (自己への指示) と `description` (他者への自己紹介) の使い分けを身につける
-- `adk create` でエージェントをスキャフォールドし、最小実装を動かす
+- 用意された最小スタブを医療トリアージ用に書き換えて、`adk run` で動かす
 
 ### 解説: ADK 2.0 における Agent
 
@@ -132,7 +134,7 @@ from google.adk import Agent
 
 root_agent = Agent(
     name="my_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description="<このエージェントは何ができるかの 1〜2 文サマリ>",
     instruction="<このエージェント自身が実行時に従う詳細指示>",
     tools=[],  # 後の Step で追加
@@ -148,24 +150,28 @@ root_agent = Agent(
 
 ### ハンズオン
 
-#### (a) 最小エージェントをスキャフォールド
+#### (a) 最小スタブを開いて構造を読む
 
-```bash
-uv run adk create app
-```
-
-対話プロンプトに以下を回答:
-
-- Model: `gemini-2.5-flash`
-- Backend: `Vertex AI` (Yes)
-- Project: (自分のプロジェクト ID)
-- Region: `us-central1`
-
-生成された [app/agent.py](app/agent.py) を開いて構造を確認します。
+[app/agent.py](app/agent.py) には最小の Agent が既に書かれています。これがエージェントの「種」です。
 
 ```bash
 cloudshell edit app/agent.py
 ```
+
+中身:
+
+```python
+from google.adk import Agent
+
+root_agent = Agent(
+    name="my_agent",
+    model="gemini-3.5-flash",
+    instruction="あなたは親切なアシスタントです。日本語で質問に答えてください。",
+)
+```
+
+> **なぜ `adk create app` を使わないのか**
+> `adk create` は対話プロンプトでモデル / バックエンド / プロジェクトを聞いて雛形 + `app/.env` を生成しますが、`app/.env` がリポジトリ root の `.env` と二重管理になってしまうため本ワークショップでは使いません。env は root の `.env` 一つに集約し、ADK は agent ディレクトリ単位で `load_dotenv()` 経由で読み込みます。
 
 #### (b) 医療トリアージ用に書き換える
 
@@ -176,7 +182,7 @@ from google.adk import Agent
 
 root_agent = Agent(
     name="triage_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description=(
         "患者の症状文から推奨される診療科候補を提示する医療トリアージ補助エージェント。"
     ),
@@ -242,7 +248,7 @@ uv run adk run app
 #### (a) Web UI を起動
 
 ```bash
-uv run adk web app --port 8000
+uv run adk web app --port 8000 --allow_origins "*"
 ```
 
 Cloud Shell の右上 **「ウェブでプレビュー」** から **「ポート 8000 でプレビュー」** を選択。
@@ -351,7 +357,7 @@ def lookup_specialty(symptom_keyword: str) -> dict:
 
 root_agent = Agent(
     name="triage_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description=(
         "患者の症状から、診療科データベースを参照して候補診療科と緊急度を提示する"
         "医療トリアージ補助エージェント。"
@@ -446,7 +452,7 @@ _maps_mcp = McpToolset(
 
 root_agent = Agent(
     name="hospital_recommender_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description=(
         "指定された診療科とエリアから、Google Maps Grounding Lite MCP 経由で"
         "近隣の医療機関を検索・提示するエージェント。"
@@ -588,7 +594,7 @@ def lookup_specialty(symptom_keyword: str) -> dict:
 # --- Node 1: 問診 ---
 intake_agent = Agent(
     name="intake_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description="患者の自由記述から主訴キーワードと希望エリアを抽出する。",
     instruction="""\
 ユーザーが症状やエリアを述べたら、以下のフォーマット (1 行) で出力してください。
@@ -605,7 +611,7 @@ intake_agent = Agent(
 # --- Node 2: トリアージ ---
 triage_agent = Agent(
     name="triage_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description="主訴キーワードから lookup_specialty ツールで診療科を推定する。",
     instruction="""\
 入力にある「主訴: ...」の値を取り出し、必ず `lookup_specialty` ツールを呼んで結果を取得してください。
@@ -619,7 +625,7 @@ triage_agent = Agent(
 # --- Node 3: 病院レコメンド ---
 recommend_agent = Agent(
     name="recommend_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description="診療科とエリアから Maps MCP で近隣医療機関を検索・提示する。",
     instruction="""\
 入力にある診療科とエリアを使って、必ず Maps MCP のツールで近隣の医療機関を 3〜5 件検索し、
@@ -679,6 +685,8 @@ root_agent = Workflow(
 
 `adk deploy cloud_run <agent_folder>` はエージェントのソースを Cloud Build でコンテナ化し Cloud Run にデプロイします。`GOOGLE_CLOUD_PROJECT` / `GOOGLE_CLOUD_LOCATION` / `GOOGLE_GENAI_USE_VERTEXAI` は自動で Cloud Run の環境変数に注入されますが、**`MAPS_API_KEY` などのアプリ固有の env vars は自分で渡す必要があります** (`--` 以降の引数が `gcloud run deploy` に渡される)。
 
+> **重要**: Cloud Run は **具体的なリージョン** (例: `us-central1`) が必要です。Vertex AI で使っている `GOOGLE_CLOUD_LOCATION=global` はそのまま使えないので、Cloud Run 用には明示的にリージョンを指定します。
+
 ### ハンズオン
 
 #### (a) デプロイコマンド
@@ -686,7 +694,7 @@ root_agent = Workflow(
 ```bash
 uv run adk deploy cloud_run \
   --project=$GOOGLE_CLOUD_PROJECT \
-  --region=$GOOGLE_CLOUD_LOCATION \
+  --region=us-central1 \
   --service_name=medical-triage \
   --with_ui \
   --trace_to_cloud \
@@ -695,6 +703,7 @@ uv run adk deploy cloud_run \
 ```
 
 主なフラグ:
+- `--region=us-central1`: Cloud Run のリージョン (Vertex AI の `global` とは別)
 - `--with_ui`: 開発用 Web UI も含めてデプロイ (本番は外す)
 - `--trace_to_cloud`: Cloud Trace にトレース送信
 - `app`: エージェントのソースコードフォルダ
@@ -708,7 +717,7 @@ uv run adk deploy cloud_run \
 
 ```bash
 # Cloud Run コンソールで状態確認
-gcloud run services describe medical-triage --region=$GOOGLE_CLOUD_LOCATION
+gcloud run services describe medical-triage --region=us-central1
 ```
 
 ブラウザで Service URL を開くと、ADK Web UI が立ち上がります。Chat で動作確認してください。
@@ -803,7 +812,7 @@ Gemini CLI のプロンプトに以下を入力 (コピペでOK):
 - 不足があれば入力末尾に補って完全な応答を返す
 - すべて揃っていれば入力をそのまま返す
 - 医療判断・推奨自体は絶対に変更しないこと
-- model は gemini-2.5-flash
+- model は gemini-3.5-flash
 ```
 
 agents-cli が組み込んだ Skills のおかげで、Gemini CLI は ADK 2.0 の Workflow / Agent API を正しく使ったコードを生成します。
@@ -824,7 +833,7 @@ AI が `app/agent.py` を書き換えたら、必ず以下を確認してから�
 #### (e) adk web で動作確認
 
 ```bash
-uv run adk web app --port 8000
+uv run adk web app --port 8000 --allow_origins "*"
 ```
 
 - Events タブで `safety_check_agent` が 4 ノード目として呼ばれていること

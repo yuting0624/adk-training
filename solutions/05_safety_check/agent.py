@@ -55,7 +55,7 @@ def lookup_specialty(symptom_keyword: str) -> dict:
 # ---------- Node 1: 問診 ----------
 intake_agent = Agent(
     name="intake_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description="患者の自由記述から主訴キーワードと希望エリアを抽出する。",
     instruction="""\
 ユーザーが症状やエリアを述べたら、以下のフォーマット (1 行) で出力してください。
@@ -72,7 +72,7 @@ intake_agent = Agent(
 # ---------- Node 2: トリアージ ----------
 triage_agent = Agent(
     name="triage_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description="主訴キーワードから lookup_specialty ツールで診療科を推定する。",
     instruction="""\
 入力にある「主訴: ...」の値を取り出し、必ず `lookup_specialty` ツールを呼んで結果を取得してください。
@@ -86,7 +86,7 @@ triage_agent = Agent(
 # ---------- Node 3: 病院レコメンド ----------
 recommend_agent = Agent(
     name="recommend_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description="診療科とエリアから Maps MCP で近隣医療機関を検索・提示する。",
     instruction="""\
 入力にある診療科とエリアを使って、必ず Maps MCP のツールで近隣の医療機関を 3〜5 件検索し、
@@ -104,7 +104,7 @@ recommend_agent = Agent(
 # ---------- Node 4: 安全チェック (Step 08 で追加) ----------
 safety_check_agent = Agent(
     name="safety_check_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description=(
         "最終応答に医療免責事項 (教育用 AI / 診断ではない / 医療機関受診促進) が"
         "含まれているかチェックし、不足があれば補完する安全網ノード。"

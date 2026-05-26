@@ -49,7 +49,7 @@ def lookup_specialty(symptom_keyword: str) -> dict:
 
 root_agent = Agent(
     name="triage_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description=(
         "患者の症状から、診療科データベースを参照して候補診療科と緊急度を提示する"
         " 医療トリアージ補助エージェント。"

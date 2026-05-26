@@ -35,9 +35,10 @@ if [[ -z "${PROJECT_ID}" || "${PROJECT_ID}" == "(unset)" ]]; then
 fi
 log "GCP project: ${PROJECT_ID}"
 
-# Vertex AI region default — change with GOOGLE_CLOUD_LOCATION env var
-REGION="${GOOGLE_CLOUD_LOCATION:-us-central1}"
-log "Vertex AI region: ${REGION}"
+# Vertex AI location default — "global" routes to nearest region automatically.
+# Cloud Run requires a specific region, hardcoded in Step 06 of tutorial.md.
+LOCATION="${GOOGLE_CLOUD_LOCATION:-global}"
+log "Vertex AI location: ${LOCATION}"
 
 # ---------- 2. enable APIs ----------
 log "Enabling required GCP APIs (this may take 1-2 min on first run)..."
@@ -68,10 +69,10 @@ if [[ ! -f .env ]]; then
   cp .env.example .env
 fi
 
-# Inject project + region into .env (idempotent)
-python3 - "$PROJECT_ID" "$REGION" <<'PY'
+# Inject project + location into .env (idempotent)
+python3 - "$PROJECT_ID" "$LOCATION" <<'PY'
 import sys, pathlib, re
-project_id, region = sys.argv[1], sys.argv[2]
+project_id, location = sys.argv[1], sys.argv[2]
 path = pathlib.Path(".env")
 text = path.read_text()
 def setkv(key, value, t):
@@ -81,7 +82,7 @@ def setkv(key, value, t):
         return re.sub(pattern, line, t, flags=re.M)
     return t.rstrip() + "\n" + line + "\n"
 text = setkv("GOOGLE_CLOUD_PROJECT", project_id, text)
-text = setkv("GOOGLE_CLOUD_LOCATION", region, text)
+text = setkv("GOOGLE_CLOUD_LOCATION", location, text)
 text = setkv("GOOGLE_GENAI_USE_VERTEXAI", "TRUE", text)
 path.write_text(text)
 PY

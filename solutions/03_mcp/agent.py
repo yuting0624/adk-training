@@ -30,7 +30,7 @@ _maps_mcp = McpToolset(
 
 root_agent = Agent(
     name="hospital_recommender_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description=(
         "指定された診療科とエリアから、Google Maps Grounding Lite MCP 経由で"
         "近隣の医療機関を検索・提示するエージェント。"

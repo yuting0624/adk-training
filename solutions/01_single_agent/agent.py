@@ -12,7 +12,7 @@ from google.adk import Agent
 
 root_agent = Agent(
     name="triage_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description=(
         "患者の症状文から推奨される診療科候補を提示する医療トリアージ補助エージェント。"
         " 後続セクションで Workflow のノードとして利用される。"

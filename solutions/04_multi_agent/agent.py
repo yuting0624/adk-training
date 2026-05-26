@@ -64,7 +64,7 @@ def lookup_specialty(symptom_keyword: str) -> dict:
 # ---------- Node 1: 問診 (Intake) ----------
 intake_agent = Agent(
     name="intake_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description="患者の自由記述から主訴キーワードと希望エリアを抽出する問診エージェント。",
     instruction="""\
 ユーザーが症状やエリアを述べたら、以下のフォーマット (1 行) で出力してください。
@@ -81,7 +81,7 @@ intake_agent = Agent(
 # ---------- Node 2: トリアージ (Triage) ----------
 triage_agent = Agent(
     name="triage_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description="主訴キーワードから lookup_specialty ツールを使って診療科を推定する。",
     instruction="""\
 入力にある「主訴: ...」の値を取り出し、必ず `lookup_specialty` ツールを呼んで結果を取得してください。
@@ -100,7 +100,7 @@ triage_agent = Agent(
 # ---------- Node 3: 病院レコメンド (Recommend) ----------
 recommend_agent = Agent(
     name="recommend_agent",
-    model="gemini-2.5-flash",
+    model="gemini-3.5-flash",
     description="診療科とエリアから Maps MCP で近隣医療機関を検索・提示する。",
     instruction="""\
 入力にある診療科とエリアを使って、必ず Maps MCP のツールで近隣の医療機関を 3〜5 件検索し、
