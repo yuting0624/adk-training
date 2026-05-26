@@ -10,3 +10,11 @@ dependencies = [
 
 [tool.uv]
 package = false
+
+# 受講者環境の PIP_INDEX_URL / 企業内 Python registry の影響を受けないよう、
+# PyPI を明示的にデフォルト index に固定する。
+# (個別 registry を使いたい場合はこのブロックを書き換える)
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple/"
+default = true
