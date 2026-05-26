@@ -495,7 +495,7 @@ Google Maps MCP のツールを使って近隣の医療機関を 3〜5 件検索
 ### 振り返り / 深掘り
 
 - MCP には他に **stdio** (`StdioConnectionParams`) と **SSE** (`SseConnectionParams`) のトランスポートがあります。ローカルプロセスとして MCP サーバーを起動する場合は stdio が定番
-- 2026 年現在、Google は **50+ の公式 MCP サーバー** を提供 (BigQuery / GKE / Workspace API 等)。Ubie の業務にも応用できる可能性大
+- 2026 年現在、Google は **50+ の公式 MCP サーバー** を提供 (BigQuery / GKE / Workspace API 等)。
 
 ---
 

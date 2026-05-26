@@ -9,9 +9,10 @@
 Cloud Shell で:
 
 ```bash
-git clone https://github.com/<org>/adk-training.git
+git clone https://github.com/yuting0624/adk-training.git
 cd adk-training
 ./setup.sh
+teachme tutorial.md
 ```
 
 その後 [tutorial.md](tutorial.md) の Step 01 から進めてください。
