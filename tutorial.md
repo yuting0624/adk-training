@@ -96,6 +96,9 @@ cloudshell edit .env
 MAPS_API_KEY=<workshop-shared-key>
 ```
 
+> **API キー制限の確認 (講師アナウンス)**
+> Step 04 で使う Maps Grounding Lite MCP (`mapstools.googleapis.com`) は、API キーの「API restrictions」で許可リストに入っていないと **403 Forbidden** で失敗します。配布されたキーは事前に許可済みのはずですが、自前のキーを使う場合は [Cloud Console > APIs & Services > Credentials](https://console.cloud.google.com/apis/credentials) でキーを開き、"Don't restrict key" にするか "Restrict key" の許可リストに **Maps Grounding Lite API** を追加してください。
+
 ### 0-4. ディレクトリ構成の確認
 
 ```

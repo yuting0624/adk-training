@@ -48,7 +48,12 @@ gcloud services enable \
   cloudbuild.googleapis.com \
   artifactregistry.googleapis.com \
   maps-backend.googleapis.com \
+  mapstools.googleapis.com \
   --project="${PROJECT_ID}"
+
+# Note: mapstools.googleapis.com is the Maps Grounding Lite MCP server backend.
+# The API key (.env MAPS_API_KEY) must also have this API allowed if it has
+# API restrictions set in Cloud Console > APIs & Services > Credentials.
 
 # ---------- 3. install uv ----------
 if ! command -v uv >/dev/null 2>&1; then
