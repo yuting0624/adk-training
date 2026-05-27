@@ -845,6 +845,7 @@ gcloud ai reasoning-engines list --region=us-central1 --project=$GOOGLE_CLOUD_PR
 - `--env_file` で指定した `.env` は Agent Engine の runtime 環境変数になります。本番では Secret Manager + Workload Identity 経由が推奨
 - 既存の Agent Engine リソースを更新したい場合は `--agent_engine_id=<id>` を追加 (省略時は新規作成)
 - `adk deploy cloud_run` (Cloud Run)、`adk deploy gke` (GKE) も同じ CLI からデプロイ可能。GE 連携前提なら Agent Engine が最短ルート
+- **Cloud Trace で会話内容まで見たい場合**: `.env` の `GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY=true` + `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true` をセット (本リポジトリの `setup.sh` がデフォルトで投入)。これにより Cloud Console > Trace explorer で各 model_call のプロンプト・応答本文まで展開可能。**本番では PII の観点で `CAPTURE_MESSAGE_CONTENT=false` を検討**
 
 ---
 

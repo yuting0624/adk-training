@@ -89,6 +89,9 @@ def setkv(key, value, t):
 text = setkv("GOOGLE_CLOUD_PROJECT", project_id, text)
 text = setkv("GOOGLE_CLOUD_LOCATION", location, text)
 text = setkv("GOOGLE_GENAI_USE_VERTEXAI", "TRUE", text)
+# Agent Engine トレース有効化 (Step 06 で --trace_to_cloud を付けるとプロンプト本文まで Cloud Trace に出る)
+text = setkv("GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY", "true", text)
+text = setkv("OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT", "true", text)
 path.write_text(text)
 PY
 
