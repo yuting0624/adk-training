@@ -30,8 +30,9 @@ adk-training/
     ├── 01_single_agent/   Step 01 完成形
     ├── 02_tools/          Step 03 完成形
     ├── 03_mcp/            Step 04 完成形
-    ├── 04_multi_agent/    Step 05 完成形
-    └── 05_safety_check/   Step 08 ストレッチ参考解
+    ├── 04_multi_agent/    Step 05 完成形 (3 ノード)
+    ├── 05_safety_check/   Step 08 ストレッチ参考解 (SafetyCheck 4 ノード)
+    └── 06_evidence/       Step 05 オプション拡張 (google_search で EvidenceAgent 4 ノード)
 ```
 
 ## ADK バージョン

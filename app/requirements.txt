@@ -1,2 +1,9 @@
+# Agent Engine sandbox runtime 用の依存。
+# `adk deploy agent_engine` 実行時、この requirements.txt が Vertex AI 側で解決される。
+#
+# 注意: pyproject.toml は `google-adk[mcp,gcp]` を要求しているが、
+#   `gcp` extra (google-cloud-aiplatform 等) は **ローカルで CLI が使う**ものなので
+#   ここには含めない。agent code 本体は google.cloud.* を直接 import しないため、
+#   sandbox runtime には `mcp` extra だけで十分 (デプロイイメージが軽くなる)。
 google-adk[mcp]>=2.1.0,<3
 python-dotenv>=1,<2

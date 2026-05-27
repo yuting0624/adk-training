@@ -34,6 +34,7 @@ graph LR
 | Step 03 Tools (関数) | 20 分 | 関数を `tools=[...]` に渡すだけでツール化 |
 | Step 04 MCP (Maps) | 15 分 | `McpToolset` + Google 公式 Maps Grounding Lite |
 | Step 05 マルチエージェント | 50 分 | `Workflow` で 3 エージェントをグラフ合成 |
+| Step 05+ [オプション] | 10 分 | `google_search` で EvidenceAgent を追加 (早めに終わったグループ向け) |
 | Step 06 Agent Engine デプロイ | 5 分 | `adk deploy agent_engine` (バックグラウンドビルド) |
 | Step 07 Gemini Enterprise | 5 分 | デプロイ済み Agent Engine を GE から呼び出す (デモ) |
 | Step 08 [ストレッチ] | 10-15 分 | `agents-cli` + Gemini CLI で AI にエージェントを改変させる (時間が許せば) |
@@ -673,6 +674,92 @@ root_agent = Workflow(
 - なぜ AgentTool ではなく Workflow なのか? AgentTool は LLM の判断でツール呼び出しが省略される可能性がある一方、Workflow はノードを **必ず** 実行する。トリアージのような **抜けが許されない業務フロー** に Workflow が適する
 - 各 Agent の `description` を実際に書いた意味: Workflow 内では各ノードの description が他のノードや (将来) 並列 / 動的ルーティングの判断に使われる
 - 改善余地: 現状は前ノードのテキスト出力をそのままパースしている。本番では Pydantic の `output_schema` で構造化出力にし、`ctx.state` 経由で受け渡すほうがロバスト
+
+---
+
+## Step 05+ [オプション]: EvidenceAgent を Workflow に追加 (10 分)
+
+> このセクションは Step 05 が早めに終わったグループ向けのオプションです。スキップして Step 06 に進んでも OK。
+
+### 学習目標
+
+- ADK 2.x の組み込み `google_search` ツール (= Gemini ネイティブの Google 検索 grounding) をエージェントに装備する
+- 「モデル内蔵ツール」と Function Tool / MCP の違いを体感する
+- `Workflow` に 4 ノード目を追加するだけで拡張できる柔軟性を確認する
+
+### 解説: ADK 2.x の `google_search`
+
+```python
+from google.adk.tools import google_search   # シングルトンインスタンス
+
+Agent(..., tools=[google_search])
+```
+
+- **モデル内蔵ツール (built-in)** なので、Gemini が自動的に検索を実行して結果をコンテキストに混ぜる。ローカルでツール呼び出しの Python コードは走らない
+- **Trace の見え方**: `tool_call` イベントとしては出ず、`model_call` の grounding metadata に現れる
+- **他ツールと同居させたいとき**: 同じ Agent で Function Tool / MCP と併用したい場合は `GoogleSearchTool(bypass_multi_tools_limit=True)` を使う。本ケースは単独 Agent なので不要
+- **モデル制限**: Gemini モデル専用 (`gemini-2.x` / `3.x`)。他社モデルでは `ValueError`
+
+### ハンズオン
+
+#### (a) EvidenceAgent を追加
+
+`app/agent.py` の Workflow 末尾に以下のノードを追加 (参考: [solutions/06_evidence/agent.py](solutions/06_evidence/agent.py)):
+
+```python
+from google.adk.tools import google_search
+
+evidence_agent = Agent(
+    name="evidence_agent",
+    model="gemini-3.5-flash",
+    description=(
+        "前ノードが提示した推奨診療科について Google 検索でエビデンスを補強し、"
+        "代表的な症状・受診の目安を最終回答に追記する補強ノード。"
+    ),
+    instruction="""\
+入力には「推奨診療科」と「近隣の候補医療機関リスト」が含まれています。
+
+あなたのタスクは以下です:
+
+1. Google 検索ツールで「<推奨診療科> 代表的な症状」「<推奨診療科> 受診の目安」を調べる
+2. 入力テキストをそのまま冒頭に保持し、末尾に下記セクションを追記する
+
+## 診療科について (参考情報)
+- 代表的な症状: <検索結果から 2぀4 個を簡潔に>
+- 受診の目安: <検索結果から 1぀2 文で>
+- 出典: <検索結果のサイト名やドメインを 1぀2 個>
+
+[ルール]
+- 既存の応答 (病院リスト・推奨診療科・緊急度) は絶対に書き換えない (追記のみ)
+- 検索結果が薄いときは「一般的な参考情報のみ」と明記し、断定しない
+- 医療判断や処方アドバイスはしない
+- 「これは教育用 AI 応答であり、実際の診断ではありません。」を末尾に必ず付記
+""",
+    tools=[google_search],
+)
+
+root_agent = Workflow(
+    name="medical_triage_workflow_with_evidence",
+    edges=[
+        ("START", intake_agent, triage_agent, recommend_agent, evidence_agent),
+    ],
+)
+```
+
+#### (b) Web UI で 4 ノードの動作を確認
+
+`adk web` を再起動し、`動悸がして、たまに胸も痛む。東京駅周辺で病院を探したい` と入力。
+
+**Events / Trace で確認**:
+- 4 つのエージェントが順番に呼ばれる (intake → triage → recommend → evidence)
+- 4 ノード目の model_call に **grounding_metadata** が付与されている (Google 検索が走った証拠)
+- 最終出力に「## 診療科について (参考情報)」セクションと出典が追加されている
+
+### 振り返り / 深掘り
+
+- **MCP vs 内蔵 google_search**: MCP はサーバーと HTTP/stdio で話すオープン規格。google_search は Gemini がトークン生成に grounding を組み込む native 機能。選択基準: 「外部 API ・他ツール群 = MCP」 / 「Google 検索だけ = google_search」
+- **併用したい場合**: `from google.adk.tools.google_search_tool import GoogleSearchTool` + `GoogleSearchTool(bypass_multi_tools_limit=True)`。ただし「Function Tool / MCP と同居」は Trace が複雑化するため、本ワークショップでは **ノードを分ける設計** を推奨
+- この拡張と Step 08 の SafetyCheckAgent は両方追加できる。その場合 Workflow は 5 ノード (Intake → Triage → Recommend → Evidence → SafetyCheck)
 
 ---
 
