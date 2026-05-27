@@ -3,6 +3,11 @@ name = "adk-training"
 version = "0.1.0"
 description = "ADK 2.0 3-hour hands-on workshop: single agent to Workflow, deployed to Cloud Run"
 requires-python = ">=3.11"
+# Local dev / Cloud Shell 用の依存。
+# - `mcp` extra : McpToolset / StreamableHTTPConnectionParams (agent runtime でも必要)
+# - `gcp` extra : `adk deploy agent_engine` が依存する google-cloud-aiplatform 等 (デプロイ CLI 専用)
+# Agent Engine の sandbox runtime では `app/requirements.txt` だけがインストールされるため、
+# あちらは意図的に `mcp` のみとしている (デプロイイメージに不要な依存を含めない)。
 dependencies = [
     "google-adk[mcp,gcp]>=2.1.0,<3",
     "python-dotenv>=1,<2",
