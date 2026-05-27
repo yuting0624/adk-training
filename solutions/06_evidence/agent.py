@@ -1,5 +1,25 @@
 """Step 05 [オプション拡張]: EvidenceAgent を Workflow に追加する参考解。
 
+⚠️ **現状は本ワークショップでは使えません (2026-05 時点)**
+─────────────────────────────────────────────────────────────────
+本ファイルが想定している Vertex AI built-in `google_search` (grounding) は、
+ワークショップ既定の組み合わせ:
+
+    GOOGLE_CLOUD_LOCATION=global  +  Gemini 3.x 系 (3.5-flash / 3.5-pro)
+
+では **grounding が呼ばれない** (リクエスト時に Vertex 側でサイレントに
+無効化される) 問題があります。Gemini 3 系は現状 global エンドポイントのみ
+利用可能で、grounding は region (us-central1 等) でのみ動作するため、
+両方を同時に満たせません。
+
+→ 将来 grounding が global で利用可能になるか、Gemini 3 系が region に
+   降りてきた時点で、本ファイルをそのまま app/agent.py に流用して
+   復活できます。それまでは tutorial.md からこの拡張ステップは外して
+   あります。
+─────────────────────────────────────────────────────────────────
+
+(以下、復活時のための原文ドキュメント)
+
 04_multi_agent の 3 ノード Workflow (Intake → Triage → Recommend) の末尾に、
 **ADK 2.x の組み込み `google_search` ツール** を装備した EvidenceAgent を 1 つ
 追加し、最終回答に「診療科の代表的な症状・受診の目安」をエビデンスとして

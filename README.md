@@ -34,7 +34,10 @@ adk-training/
     ├── 03_mcp/            Step 04 完成形
     ├── 04_multi_agent/    Step 05 完成形 (3 ノード)
     ├── 05_safety_check/   Step 08 ストレッチ参考解 (SafetyCheck 4 ノード)
-    └── 06_evidence/       Step 05 オプション拡張 (google_search で EvidenceAgent 4 ノード)
+    └── 06_evidence/       (⚠️ 現状未使用) Vertex AI built-in google_search は
+                           Gemini 3 系 + global の組み合わせで grounding が
+                           呼ばれない問題のため、tutorial では除外。将来
+                           region/global 対応が揃ったら復活可能
 ```
 
 ## ADK バージョン
