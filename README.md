@@ -12,6 +12,7 @@ Cloud Shell で:
 git clone https://github.com/yuting0624/adk-training.git
 cd adk-training
 ./setup.sh
+./verify.sh      # 任意: 事前ヘルスチェック (API有効化 / モデル疎通 / Maps MCP 接続)
 teachme tutorial.md
 ```
 
@@ -23,9 +24,10 @@ teachme tutorial.md
 adk-training/
 ├── tutorial.md            ← ワークショップ本体 (全手順 + 解説)
 ├── setup.sh               ← Cloud Shell ワンショットセットアップ
+├── verify.sh              ← 事前ヘルスチェック (API / モデル / MCP 疎通)
 ├── pyproject.toml         ← 依存関係 (google-adk 2.x, uv 管理)
 ├── .env.example           ← 環境変数テンプレート
-├── app/                   ← 受講者が育てるエージェント (出発点は空)
+├── app/                   ← 受講者が育てるエージェント (Step 01 stub + evalset.json)
 └── solutions/             ← 各 Step 完成形 (詰まったとき用)
     ├── 01_single_agent/   Step 01 完成形
     ├── 02_tools/          Step 03 完成形
