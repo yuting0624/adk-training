@@ -1,0 +1,79 @@
+{
+  "eval_set_id": "triage_basic",
+  "name": "Medical triage basic cases",
+  "description": "Step 01 で作成したシングルエージェントが、症状文から正しい診療科候補と緊急度を提示できるかを検証するシンプルな eval セット。LLM-as-judge で final_response を採点する。",
+  "eval_cases": [
+    {
+      "eval_id": "chest_pain_high_urgency",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "最近、階段を上ると息切れがして胸も痛む"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "推奨診療科として循環器内科または呼吸器内科が候補に挙がります。胸痛と息切れの組み合わせは循環器系の問題を示唆する可能性があり、緊急度は中〜高と考えられます。早めに医療機関を受診してください。これは教育用の AI 応答であり、実際の診断ではありません。"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "eval_id": "fever_pediatric",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "子どもが昨日から 38.5 度の発熱があります"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "推奨診療科として小児科または内科が候補となります。38.5 度の発熱は中等度であり、緊急度は中です。症状が続く場合や水分摂取が困難な場合は医療機関を受診してください。これは教育用の AI 応答であり、実際の診断ではありません。"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "eval_id": "facial_paralysis_emergency",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "朝起きたら顔の片側が動かしにくい"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "推奨診療科は脳神経内科または神経内科です。顔の片側の動かしにくさは脳血管障害 (脳卒中) のサインの可能性があり、緊急度は高です。直ちに救急受診をしてください。これは教育用の AI 応答であり、実際の診断ではありません。"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

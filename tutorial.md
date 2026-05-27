@@ -79,6 +79,14 @@ cd adk-training
 
 スクリプトが `[setup] Done.` で終了すれば成功です。所要時間は初回 3〜5 分。
 
+### 0-2.5. (任意) verify.sh で事前ヘルスチェック
+
+```bash
+./verify.sh
+```
+
+API 有効化 / MAPS_API_KEY / Vertex AI モデル疎通 / ADC / app の import まで一通りプリフライト。Step 01 で詰まる前にここで弾けます (赤い FAIL がなければ OK)。
+
 ### 0-3. MAPS_API_KEY を設定
 
 ワークショップ講師から配布された Maps API キーを `.env` に書き込みます。
@@ -233,7 +241,7 @@ uv run adk run app
 
 - `adk web` で起動する開発 UI の使い方を理解する
 - Events / Trace / State タブで「何が起きているか」を確認する
-- `adk eval` の概念を知る (実機実行は省略)
+- `adk eval` を実機実行し、LLM-as-judge による品質スコアの読み方を学ぶ
 
 ### 解説: adk web
 
@@ -265,17 +273,25 @@ Chat で「動悸がする」と入力し、応答が返ったら **Events** タ
 - トークン使用量 (input / output) が表示される
 - Trace ビューで model call が処理時間の大半を占めている
 
-#### (c) adk eval の概念紹介 (デモのみ)
+#### (c) adk eval で評価セットを実行する
 
 ADK には `adk eval` というツールがあり、入出力期待値をセットで定義した「評価セット」に対して、エージェントの応答品質とツール呼び出し軌跡を自動評価できます。
 
+リポジトリには Step 01 で作ったエージェント向けに用意した [app/evalset.json](app/evalset.json) があります (中身は 3 ケース: 胸痛 / 発熱 / 顔面麻痺)。実行してみましょう:
+
 ```bash
-# 評価セットの新規作成 (デモ参照のみ、実行は不要)
-uv run adk eval_set create my_eval_set
-uv run adk eval app my_eval_set
+uv run adk eval app app/evalset.json --print_detailed_results
 ```
 
-ワークショップでは時間の都合で実機実行は省略しますが、本番のエージェント開発では LLM-as-judge による回帰テストに不可欠です。
+各ケースについて以下が表示されます:
+
+- **`response_match_score`**: モデルの実応答と evalset の `final_response` を **LLM-as-judge で比較** したスコア (0〜1)
+- **`tool_trajectory_avg_score`**: 期待されたツール呼び出し順序とのマッチ率 (Step 03 でツール装備後に意味を持つ)
+- 各ケースが PASS / FAIL のどちらか (デフォルトしきい値)
+
+> **Tips**: evalset を新規に作りたい場合は、Web UI (`adk web`) の Chat 画面で会話 → 右上の保存ボタンで「現在のセッションを eval ケースとして追加」できます。手書きより遥かに楽。
+
+[app/evalset.json](app/evalset.json) を覗いて、`user_content` (入力) と `final_response` (期待出力) の構造を確認しておくと、Step 03 以降で「ツール呼び出し軌跡まで含めた評価」に拡張するイメージが湧きます。
 
 ### 振り返り / 深掘り
 
